@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/justinas/nosurf"
@@ -35,10 +36,21 @@ func (app *application) recoverPanic(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if err := recover(); err != nil {
+				log.Printf("Recovered from panic: %v", err) //error log
 				w.Header().Set("Connection", "close")
-				app.serverError(w, fmt.Errorf("%s", err))
+				// app.serverError(w, fmt.Errorf("%s", err))
+				if app == nil {
+					log.Println("app is nil")
+				} else {
+					app.serverError(w, fmt.Errorf("%s", err))
+				}
 			}
 		}()
+
+		if next == nil {
+			log.Println("next handler is nil")
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
 }
